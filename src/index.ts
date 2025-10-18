@@ -2,12 +2,14 @@ import express from "express";
 import mongoConnection from "./db/index.js";
 import dotenv from "dotenv";
 
+import app from "./app.js"
+
 dotenv.config();
 
 const PORT = process.env.PORT || 8000;
-const app = express();
 
-app.use(express.json());
+
+
 
 mongoConnection()
   .then(() => {

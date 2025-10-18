@@ -1,10 +1,10 @@
-class ApiResponse <T extends string | string[]>{
+class ApiResponse {
     statusCode:number
-    data:T
+    data:string
     message:string
     success:boolean
 
-    constructor(statusCode:number, data:T,message="success"){
+    constructor(statusCode:number, data:string,message="success"){
         this.statusCode=statusCode
         this.data=data
         this.message=message
