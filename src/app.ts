@@ -1,5 +1,6 @@
 import express from "express"
 import healthRouter from "./routes/healthcheck.routes.js"
+import auhtrouter from "./routes/user.routes.js"
 
 
 const app=express();
@@ -11,6 +12,7 @@ app.use(express.static("public"))
 
 
 app.use("/api/v1/healthcheck",healthRouter);
+app.use("/api/v1/user",auhtrouter)
 
 
 export default app

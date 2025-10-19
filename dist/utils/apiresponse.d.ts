@@ -1,9 +1,9 @@
 declare class ApiResponse {
     statusCode: number;
-    data: string;
+    data: object;
     message: string;
     success: boolean;
-    constructor(statusCode: number, data: string, message?: string);
+    constructor(statusCode: number, data: object, message?: string);
 }
 export { ApiResponse };
 //# sourceMappingURL=apiresponse.d.ts.map
