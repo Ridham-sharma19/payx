@@ -2,120 +2,145 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt, { SignOptions } from "jsonwebtoken";
 
+/* --------------------------------------------
+   🧩 Token Payload Interfaces
+-------------------------------------------- */
 export interface IAccessTokenPayload {
-  _id: string;
+  _id: mongoose.Schema.Types.ObjectId;
   email: string;
   username: string;
 }
 
 export interface IRefreshTokenPayload {
-  _id: string;
+  _id: mongoose.Schema.Types.ObjectId;
 }
 
+/* --------------------------------------------
+   👤 User Document Interface
+-------------------------------------------- */
 export interface IUserDocument extends Document {
   username: string;
   fullname?: string;
   email: string;
   password: string;
-  refreshtoken: string,
+  refreshtoken?: string;
+
   isPasswordCorrect(password: string): Promise<boolean>;
   generateAccessToken(): string;
   generateRefreshToken(): string;
 }
 
-const userSchema = new Schema<IUserDocument>({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true,
-    index: true,
-  },
-  fullname: {
-    type: String,
-    trim: true,
-  },
-  email: {
-    type: String,
-    required: [true, "Email is required"],
-    unique: true,
-    lowercase: true,
-    trim: true,
-  },
-  password: {
-    type: String,
-    required: [true, "Password is required"],
-    minlength: 6,
-  },
-  refreshtoken: {
-    type: String,
-  },
-});
+/* --------------------------------------------
+   💰 User Account Interface
+-------------------------------------------- */
+export interface IUserAccount extends Document {
+  userId: mongoose.Schema.Types.ObjectId;
+  balance: number;
+}
 
-interface IUserModel extends Model<IUserDocument> {}
+/* --------------------------------------------
+   🧱 User Schema
+-------------------------------------------- */
+const userSchema = new Schema<IUserDocument>(
+  {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
+    fullname: {
+      type: String,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      minlength: 6,
+    },
+    refreshtoken: {
+      type: String,
+    },
+  },
+  { timestamps: true }
+);
 
+/* --------------------------------------------
+   🔒 Password Hash Middleware
+-------------------------------------------- */
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
-    return next();
-  }
+  if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
+/* --------------------------------------------
+   ⚙️ Instance Methods
+-------------------------------------------- */
 userSchema.methods.isPasswordCorrect = async function (
   password: string
 ): Promise<boolean> {
-  return await bcrypt.compare(password, this.password);
+  return bcrypt.compare(password, this.password);
 };
 
-userSchema.methods.generateAccessToken = function (
-  this: IUserDocument
-): string {
-  if (!process.env.ACCESS_TOKEN_SECRET) {
-    throw new Error("ACCESS_TOKEN_SECRET environment variable is not defined");
-  }
+userSchema.methods.generateAccessToken = function (): string {
+  const secret = process.env.ACCESS_TOKEN_SECRET;
+  if (!secret) throw new Error("ACCESS_TOKEN_SECRET not set");
 
   const payload: IAccessTokenPayload = {
-    _id: this._id as string,
+    _id: this._id.toString(),
     email: this.email,
     username: this.username,
   };
 
-  const options = {
+  return jwt.sign(payload, secret, {
     expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "15m",
-  };
-
-  return jwt.sign(
-    payload,
-    process.env.ACCESS_TOKEN_SECRET,
-    options as SignOptions
-  );
+  } as SignOptions);
 };
 
-userSchema.methods.generateRefreshToken = function (
-  this: IUserDocument
-): string {
-  if (!process.env.REFRESH_TOKEN_SECRET) {
-    throw new Error("REFRESH_TOKEN_SECRET environment variable is not defined");
-  }
+userSchema.methods.generateRefreshToken = function (): string {
+  const secret = process.env.REFRESH_TOKEN_SECRET;
+  if (!secret) throw new Error("REFRESH_TOKEN_SECRET not set");
 
-  const payload: IRefreshTokenPayload = {
-    _id: this._id as string,
-  };
+  const payload: IRefreshTokenPayload = { _id: this._id.toString() };
 
-  const options = {
+  return jwt.sign(payload, secret, {
     expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "7d",
-  };
-
-  return jwt.sign(
-    payload,
-    process.env.REFRESH_TOKEN_SECRET,
-    options as SignOptions
-  );
+  } as SignOptions);
 };
 
-export const User: IUserModel = mongoose.model<IUserDocument>(
-  "User",
-  userSchema
+/* --------------------------------------------
+   🏦 Account Schema
+-------------------------------------------- */
+const accountSchema = new Schema<IUserAccount>(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    balance: {
+      type: Number,
+      default: 0,
+    },
+  },
+  { timestamps: true }
+);
+
+/* --------------------------------------------
+   📦 Model Exports
+-------------------------------------------- */
+export const User: Model<IUserDocument> = mongoose.model("User", userSchema);
+export const Account: Model<IUserAccount> = mongoose.model(
+  "Account",
+  accountSchema
 );

@@ -1,6 +1,9 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+/* --------------------------------------------
+   🧱 User Schema
+-------------------------------------------- */
 const userSchema = new Schema({
     username: {
         type: String,
@@ -29,42 +32,61 @@ const userSchema = new Schema({
     refreshtoken: {
         type: String,
     },
-});
+}, { timestamps: true });
+/* --------------------------------------------
+   🔒 Password Hash Middleware
+-------------------------------------------- */
 userSchema.pre("save", async function (next) {
-    if (!this.isModified("password")) {
+    if (!this.isModified("password"))
         return next();
-    }
     this.password = await bcrypt.hash(this.password, 10);
     next();
 });
+/* --------------------------------------------
+   ⚙️ Instance Methods
+-------------------------------------------- */
 userSchema.methods.isPasswordCorrect = async function (password) {
-    return await bcrypt.compare(password, this.password);
+    return bcrypt.compare(password, this.password);
 };
 userSchema.methods.generateAccessToken = function () {
-    if (!process.env.ACCESS_TOKEN_SECRET) {
-        throw new Error("ACCESS_TOKEN_SECRET environment variable is not defined");
-    }
+    const secret = process.env.ACCESS_TOKEN_SECRET;
+    if (!secret)
+        throw new Error("ACCESS_TOKEN_SECRET not set");
     const payload = {
-        _id: this._id,
+        _id: this._id.toString(),
         email: this.email,
         username: this.username,
     };
-    const options = {
+    return jwt.sign(payload, secret, {
         expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "15m",
-    };
-    return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, options);
+    });
 };
 userSchema.methods.generateRefreshToken = function () {
-    if (!process.env.REFRESH_TOKEN_SECRET) {
-        throw new Error("REFRESH_TOKEN_SECRET environment variable is not defined");
-    }
-    const payload = {
-        _id: this._id,
-    };
-    const options = {
+    const secret = process.env.REFRESH_TOKEN_SECRET;
+    if (!secret)
+        throw new Error("REFRESH_TOKEN_SECRET not set");
+    const payload = { _id: this._id.toString() };
+    return jwt.sign(payload, secret, {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "7d",
-    };
-    return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, options);
+    });
 };
+/* --------------------------------------------
+   🏦 Account Schema
+-------------------------------------------- */
+const accountSchema = new Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+    },
+    balance: {
+        type: Number,
+        default: 0,
+    },
+}, { timestamps: true });
+/* --------------------------------------------
+   📦 Model Exports
+-------------------------------------------- */
 export const User = mongoose.model("User", userSchema);
+export const Account = mongoose.model("Account", accountSchema);
 //# sourceMappingURL=user.mode.js.map

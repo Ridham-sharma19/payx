@@ -1,5 +1,5 @@
 import { AsyncHandler } from "../utils/asynhandler.js";
-import { User } from "../models/user.mode.js";
+import { Account, User } from "../models/user.mode.js";
 import { ApiError } from "../utils/errorhandler.js";
 import { ApiResponse } from "../utils/apiresponse.js";
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -21,7 +21,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 const registerUser = AsyncHandler(async (req, res) => {
     const { email, password, fullname, username } = req.body;
     const userExist = await User.findOne({
-        $or: [{ username }, { email }]
+        $or: [{ username }, { email }],
     });
     if (userExist) {
         throw new ApiError(409, "User with this email or username already present", []);
@@ -32,19 +32,22 @@ const registerUser = AsyncHandler(async (req, res) => {
         password,
         username,
     });
-    await user.save({ validateBeforeSave: false });
+    const userAccount = await Account.create({
+        userId: user._id,
+        balance: Math.floor(Math.random() * 10000) + 1,
+    });
     const createdUser = await User.findById(user._id).select(" -password -refreshtoken");
     if (!createdUser) {
         throw new ApiError(500, "Some thing went wrong while registering the user ");
     }
     return res
         .status(201)
-        .json(new ApiResponse(201, { user: createdUser }, "user registered successfully"));
+        .json(new ApiResponse(201, { user: createdUser }, "user registered successfully" + "with balance:" + userAccount.balance));
 });
 const login = AsyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({
-        email
+        email,
     });
     if (!user) {
         throw new ApiError(400, "user does not exist");

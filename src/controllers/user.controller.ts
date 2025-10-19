@@ -1,10 +1,12 @@
+import mongoose from "mongoose";
 import { AsyncHandler } from "../utils/asynhandler.js";
-import { User } from "../models/user.mode.js";
+import { Account, User } from "../models/user.mode.js";
 import { ApiError } from "../utils/errorhandler.js";
 import { ApiResponse } from "../utils/apiresponse.js";
 
-
-const generateAccessAndRefreshTokens = async (userId: string) => {
+const generateAccessAndRefreshTokens = async (
+  userId: mongoose.Types.ObjectId
+) => {
   try {
     const user = await User.findById(userId);
     if (!user) {
@@ -20,36 +22,42 @@ const generateAccessAndRefreshTokens = async (userId: string) => {
   } catch (error) {
     throw new ApiError(
       500,
-      "Something went wrong while generating access token",
+      "Something went wrong while generating access token"
     );
   }
 };
 
+const registerUser = AsyncHandler(async (req, res) => {
+  const { email, password, fullname, username } = req.body;
 
-const registerUser=AsyncHandler(async(req,res)=>{
-    const { email ,password, fullname, username}=req.body;
-
-    const userExist=await User.findOne({
-        $or: [{username},{email}]
-    })
-    if(userExist){
-       throw new  ApiError(409,"User with this email or username already present",[])
-    }
-    const user=await User.create({
+  const userExist = await User.findOne({
+    $or: [{ username }, { email }],
+  });
+  if (userExist) {
+    throw new ApiError(
+      409,
+      "User with this email or username already present",
+      []
+    );
+  }
+  const user = await User.create({
     email,
     fullname,
     password,
     username,
-    })
-    await user.save({validateBeforeSave:false})
-     const createdUser = await User.findById(user._id).select(
-    " -password -refreshtoken",
+  });
+  const userAccount=await Account.create({
+    userId: user._id,
+    balance: Math.floor(Math.random() * 10000) + 1,
+  });
+  const createdUser = await User.findById(user._id).select(
+    " -password -refreshtoken"
   );
 
   if (!createdUser) {
     throw new ApiError(
       500,
-      "Some thing went wrong while registering the user ",
+      "Some thing went wrong while registering the user "
     );
   }
   return res
@@ -58,30 +66,31 @@ const registerUser=AsyncHandler(async(req,res)=>{
       new ApiResponse(
         201,
         { user: createdUser },
-        "user registered successfully",
-      ),
+        "user registered successfully"+"with balance:"+userAccount.balance
+      )
     );
-})
+});
 
+const login = AsyncHandler(async (req, res) => {
+  const { email, password } = req.body;
 
-const login=AsyncHandler(async(req,res)=>{
-    const { email,password }=req.body;
+  const user = await User.findOne({
+    email,
+  });
+  if (!user) {
+    throw new ApiError(400, "user does not exist");
+  }
+  const isValid = await user.isPasswordCorrect(password);
 
-    const user=await User.findOne({
-        email
-    })
-    if(!user){
-        throw new ApiError(400,"user does not exist");
-    }
-    const isValid=await user.isPasswordCorrect(password);
+  if (!isValid) {
+    throw new ApiError(400, "Invalid Credentials");
+  }
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
+    user._id as mongoose.Types.ObjectId
+  );
 
-    if(!isValid){
-        throw new ApiError(400,"Invalid Credentials")
-    }
-    const { accessToken ,refreshToken}=await generateAccessAndRefreshTokens( user._id as string);
-
-     const loggedInUser = await User.findById(user._id).select(
-    " -password -refreshtoken ",
+  const loggedInUser = await User.findById(user._id).select(
+    " -password -refreshtoken "
   );
 
   const options = {
@@ -101,13 +110,10 @@ const login=AsyncHandler(async(req,res)=>{
           accessToken,
           refreshToken,
         },
-        "User logged in successfully",
-      ),
+        "User logged in successfully"
+      )
     );
-
-
-})
-
+});
 
 const updatePassword = AsyncHandler(async (req, res) => {
   const { oldpassword, newpassword } = req.body;
@@ -130,7 +136,4 @@ const updatePassword = AsyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Password updated successfully"));
 });
 
-
-export {
-    registerUser, login, updatePassword
-}
+export { registerUser, login, updatePassword };
