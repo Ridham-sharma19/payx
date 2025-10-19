@@ -1,8 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-// 2. Define the schema without the instance methods.
-//    Using `UserSchema` for the Schema variable is a common convention.
 const userSchema = new Schema({
     username: {
         type: String,
@@ -28,18 +26,17 @@ const userSchema = new Schema({
         required: [true, "Password is required"],
         minlength: 6,
     },
+    refreshtoken: {
+        type: String,
+    },
 });
-// 3. Use Mongoose middleware for password hashing.
 userSchema.pre("save", async function (next) {
-    // `this` is correctly inferred as `IUserDocument` here.
     if (!this.isModified("password")) {
         return next();
     }
     this.password = await bcrypt.hash(this.password, 10);
     next();
 });
-// 4. Implement instance methods using Mongoose's `methods` property.
-//    Using `this: IUserDocument` clarifies the context for `this`.
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password);
 };
@@ -69,6 +66,5 @@ userSchema.methods.generateRefreshToken = function () {
     };
     return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, options);
 };
-// 5. Create and export the User model.
 export const User = mongoose.model("User", userSchema);
 //# sourceMappingURL=user.mode.js.map

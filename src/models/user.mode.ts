@@ -2,7 +2,6 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt, { SignOptions } from "jsonwebtoken";
 
-
 export interface IAccessTokenPayload {
   _id: string;
   email: string;
@@ -13,17 +12,16 @@ export interface IRefreshTokenPayload {
   _id: string;
 }
 
-
 export interface IUserDocument extends Document {
   username: string;
   fullname?: string;
   email: string;
   password: string;
+  refreshtoken: string,
   isPasswordCorrect(password: string): Promise<boolean>;
   generateAccessToken(): string;
   generateRefreshToken(): string;
 }
-
 
 const userSchema = new Schema<IUserDocument>({
   username: {
@@ -50,14 +48,14 @@ const userSchema = new Schema<IUserDocument>({
     required: [true, "Password is required"],
     minlength: 6,
   },
+  refreshtoken: {
+    type: String,
+  },
 });
-
 
 interface IUserModel extends Model<IUserDocument> {}
 
-
 userSchema.pre("save", async function (next) {
-
   if (!this.isModified("password")) {
     return next();
   }
@@ -65,11 +63,15 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-userSchema.methods.isPasswordCorrect = async function (password: string): Promise<boolean> {
+userSchema.methods.isPasswordCorrect = async function (
+  password: string
+): Promise<boolean> {
   return await bcrypt.compare(password, this.password);
 };
 
-userSchema.methods.generateAccessToken = function (this: IUserDocument): string {
+userSchema.methods.generateAccessToken = function (
+  this: IUserDocument
+): string {
   if (!process.env.ACCESS_TOKEN_SECRET) {
     throw new Error("ACCESS_TOKEN_SECRET environment variable is not defined");
   }
@@ -84,10 +86,16 @@ userSchema.methods.generateAccessToken = function (this: IUserDocument): string 
     expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "15m",
   };
 
-  return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, options as SignOptions);
+  return jwt.sign(
+    payload,
+    process.env.ACCESS_TOKEN_SECRET,
+    options as SignOptions
+  );
 };
 
-userSchema.methods.generateRefreshToken = function (this: IUserDocument): string {
+userSchema.methods.generateRefreshToken = function (
+  this: IUserDocument
+): string {
   if (!process.env.REFRESH_TOKEN_SECRET) {
     throw new Error("REFRESH_TOKEN_SECRET environment variable is not defined");
   }
@@ -100,8 +108,14 @@ userSchema.methods.generateRefreshToken = function (this: IUserDocument): string
     expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "7d",
   };
 
-  return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, options as SignOptions);
+  return jwt.sign(
+    payload,
+    process.env.REFRESH_TOKEN_SECRET,
+    options as SignOptions
+  );
 };
 
-
-export const User: IUserModel = mongoose.model<IUserDocument>("User", userSchema);
+export const User: IUserModel = mongoose.model<IUserDocument>(
+  "User",
+  userSchema
+);

@@ -7,5 +7,17 @@ const userRegisterValidator = () => {
         body("fullname").trim().optional()
     ];
 };
-export { userRegisterValidator };
+const userLoginValidators = () => {
+    return [
+        body("email").notEmpty().isEmail().withMessage("Email is invalid"),
+        body("password").notEmpty().withMessage("Password is required")
+    ];
+};
+const userChangeCurrentPasswordValidator = () => {
+    return [
+        body("oldpassword").notEmpty().withMessage("old password is required"),
+        body("newpassword").notEmpty().withMessage("new password is required")
+    ];
+};
+export { userRegisterValidator, userLoginValidators, userChangeCurrentPasswordValidator };
 //# sourceMappingURL=index.js.map

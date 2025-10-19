@@ -12,6 +12,7 @@ export interface IUserDocument extends Document {
     fullname?: string;
     email: string;
     password: string;
+    refreshtoken: string;
     isPasswordCorrect(password: string): Promise<boolean>;
     generateAccessToken(): string;
     generateRefreshToken(): string;

@@ -4,6 +4,26 @@ import { ApiError } from "../utils/errorhandler.js";
 import { ApiResponse } from "../utils/apiresponse.js";
 
 
+const generateAccessAndRefreshTokens = async (userId: string) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshtoken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating access token",
+    );
+  }
+};
 
 
 const registerUser=AsyncHandler(async(req,res)=>{
@@ -23,7 +43,7 @@ const registerUser=AsyncHandler(async(req,res)=>{
     })
     await user.save({validateBeforeSave:false})
      const createdUser = await User.findById(user._id).select(
-    " -password -refreshToken -emailVerificationToken -emailVerificationExpiry",
+    " -password -refreshtoken",
   );
 
   if (!createdUser) {
@@ -43,6 +63,74 @@ const registerUser=AsyncHandler(async(req,res)=>{
     );
 })
 
+
+const login=AsyncHandler(async(req,res)=>{
+    const { email,password }=req.body;
+
+    const user=await User.findOne({
+        email
+    })
+    if(!user){
+        throw new ApiError(400,"user does not exist");
+    }
+    const isValid=await user.isPasswordCorrect(password);
+
+    if(!isValid){
+        throw new ApiError(400,"Invalid Credentials")
+    }
+    const { accessToken ,refreshToken}=await generateAccessAndRefreshTokens( user._id as string);
+
+     const loggedInUser = await User.findById(user._id).select(
+    " -password -refreshtoken ",
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: false,
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: loggedInUser,
+          accessToken,
+          refreshToken,
+        },
+        "User logged in successfully",
+      ),
+    );
+
+
+})
+
+
+const updatePassword = AsyncHandler(async (req, res) => {
+  const { oldpassword, newpassword } = req.body;
+
+  const user = await User.findById(req.user?._id!);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const isPasswordValid = await user.isPasswordCorrect(oldpassword);
+  if (!isPasswordValid) {
+    throw new ApiError(400, "Invalid old password");
+  }
+
+  user.password = newpassword;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password updated successfully"));
+});
+
+
 export {
-    registerUser
+    registerUser, login, updatePassword
 }
