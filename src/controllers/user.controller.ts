@@ -46,7 +46,7 @@ const registerUser = AsyncHandler(async (req, res) => {
     password,
     username,
   });
-  const userAccount=await Account.create({
+  const userAccount = await Account.create({
     userId: user._id,
     balance: Math.floor(Math.random() * 10000) + 1,
   });
@@ -66,7 +66,7 @@ const registerUser = AsyncHandler(async (req, res) => {
       new ApiResponse(
         201,
         { user: createdUser },
-        "user registered successfully"+"with balance:"+userAccount.balance
+        "user registered successfully" + "with balance:" + userAccount.balance
       )
     );
 });
@@ -136,4 +136,37 @@ const updatePassword = AsyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Password updated successfully"));
 });
 
-export { registerUser, login, updatePassword };
+
+const getusers=AsyncHandler(async(req,res)=>{
+
+   const filter = (req.query.filter as string)?.trim() || "";
+
+  let query = {};
+  if (filter) {
+   
+    const regex = new RegExp("^" + filter, "i"); 
+    query = {
+      $or: [
+        { username: { $regex: regex } },
+        { fullname: { $regex: regex } },
+      ],
+    };
+  }
+
+  const users = await User.find(query);
+
+  res.status(200).json({
+    success: true,
+    data: users.map((user) => ({
+      _id: user._id,
+      username: user.username,
+      fullname: user.fullname,
+      email: user.email
+    })),
+  });
+  } 
+)
+
+
+
+export { registerUser, login, updatePassword, getusers};

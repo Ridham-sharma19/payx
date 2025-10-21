@@ -25,8 +25,19 @@ const userChangeCurrentPasswordValidator=()=>{
     ]
 }
 
+const transaction=()=>{
+    return [
+        body("to").notEmpty().withMessage("receiver's id is required"),
+        body("amount")
+         .notEmpty()
+         .withMessage("Specify the amount")
+         .isFloat({ gt: 0 }) 
+         .withMessage("Amount must be a positive number"),
+    ]
+}
+
 
 export {
     userRegisterValidator,
-    userLoginValidators,userChangeCurrentPasswordValidator
+    userLoginValidators,userChangeCurrentPasswordValidator,transaction
 }

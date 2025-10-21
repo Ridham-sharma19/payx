@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import jwt, { SignOptions } from "jsonwebtoken";
 
 /* --------------------------------------------
-   🧩 Token Payload Interfaces
+   Token Payload Interfaces
 -------------------------------------------- */
 export interface IAccessTokenPayload {
   _id: mongoose.Schema.Types.ObjectId;
@@ -16,7 +16,7 @@ export interface IRefreshTokenPayload {
 }
 
 /* --------------------------------------------
-   👤 User Document Interface
+    User Document Interface
 -------------------------------------------- */
 export interface IUserDocument extends Document {
   username: string;
@@ -31,7 +31,7 @@ export interface IUserDocument extends Document {
 }
 
 /* --------------------------------------------
-   💰 User Account Interface
+    User Account Interface
 -------------------------------------------- */
 export interface IUserAccount extends Document {
   userId: mongoose.Schema.Types.ObjectId;
@@ -39,7 +39,7 @@ export interface IUserAccount extends Document {
 }
 
 /* --------------------------------------------
-   🧱 User Schema
+    User Schema
 -------------------------------------------- */
 const userSchema = new Schema<IUserDocument>(
   {
@@ -75,7 +75,7 @@ const userSchema = new Schema<IUserDocument>(
 );
 
 /* --------------------------------------------
-   🔒 Password Hash Middleware
+    Password Hash Middleware
 -------------------------------------------- */
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
@@ -84,7 +84,7 @@ userSchema.pre("save", async function (next) {
 });
 
 /* --------------------------------------------
-   ⚙️ Instance Methods
+    Instance Methods
 -------------------------------------------- */
 userSchema.methods.isPasswordCorrect = async function (
   password: string
