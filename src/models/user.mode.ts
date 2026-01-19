@@ -3,7 +3,6 @@ import bcrypt from "bcrypt";
 import jwt, { SignOptions } from "jsonwebtoken";
 
 
-
 export interface IAccessTokenPayload {
   _id: mongoose.Schema.Types.ObjectId;
   email: string;
@@ -120,6 +119,7 @@ const accountSchema = new Schema<IUserAccount>(
   },
   { timestamps: true }
 );
+
 
 export const User: Model<IUserDocument> = mongoose.model("User", userSchema);
 export const Account: Model<IUserAccount> = mongoose.model(
