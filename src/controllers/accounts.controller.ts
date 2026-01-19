@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { AsyncHandler } from "../utils/asynhandler.js";
-import { Account, User, IUserAccount } from "../models/user.mode.js";
+import { Account, IUserAccount } from "../models/user.mode.js";
 import { ApiError } from "../utils/errorhandler.js";
 import { ApiResponse } from "../utils/apiresponse.js";
 

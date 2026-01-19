@@ -2,9 +2,8 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt, { SignOptions } from "jsonwebtoken";
 
-/* --------------------------------------------
-   Token Payload Interfaces
--------------------------------------------- */
+
+
 export interface IAccessTokenPayload {
   _id: mongoose.Schema.Types.ObjectId;
   email: string;
@@ -15,9 +14,7 @@ export interface IRefreshTokenPayload {
   _id: mongoose.Schema.Types.ObjectId;
 }
 
-/* --------------------------------------------
-    User Document Interface
--------------------------------------------- */
+
 export interface IUserDocument extends Document {
   username: string;
   fullname?: string;
@@ -30,17 +27,12 @@ export interface IUserDocument extends Document {
   generateRefreshToken(): string;
 }
 
-/* --------------------------------------------
-    User Account Interface
--------------------------------------------- */
 export interface IUserAccount extends Document {
   userId: mongoose.Schema.Types.ObjectId;
   balance: number;
 }
 
-/* --------------------------------------------
-    User Schema
--------------------------------------------- */
+
 const userSchema = new Schema<IUserDocument>(
   {
     username: {
@@ -74,18 +66,14 @@ const userSchema = new Schema<IUserDocument>(
   { timestamps: true }
 );
 
-/* --------------------------------------------
-    Password Hash Middleware
--------------------------------------------- */
+
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-/* --------------------------------------------
-    Instance Methods
--------------------------------------------- */
+
 userSchema.methods.isPasswordCorrect = async function (
   password: string
 ): Promise<boolean> {
@@ -118,9 +106,6 @@ userSchema.methods.generateRefreshToken = function (): string {
   } as SignOptions);
 };
 
-/* --------------------------------------------
-   🏦 Account Schema
--------------------------------------------- */
 const accountSchema = new Schema<IUserAccount>(
   {
     userId: {
@@ -136,9 +121,6 @@ const accountSchema = new Schema<IUserAccount>(
   { timestamps: true }
 );
 
-/* --------------------------------------------
-   📦 Model Exports
--------------------------------------------- */
 export const User: Model<IUserDocument> = mongoose.model("User", userSchema);
 export const Account: Model<IUserAccount> = mongoose.model(
   "Account",
