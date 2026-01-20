@@ -6,10 +6,11 @@ import accountrouter from "./routes/account.routes.js";
 import cors from "cors";
 const app = express();
 app.use(cors({
-    origin: "*",
+    origin: [
+        "http://localhost:5173",
+        "https://payx-f.vercel.app",
+    ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Authorization", "Content-type"]
 }));
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
