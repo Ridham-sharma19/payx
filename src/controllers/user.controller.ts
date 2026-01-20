@@ -138,4 +138,19 @@ const getusers = AsyncHandler(async (req, res) => {
   });
 });
 
-export { registerUser, login, updatePassword, getusers };
+const getCurrentUser = AsyncHandler(async (req, res) => {
+  if (!req.user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { user: req.user },
+      "Current user fetched successfully"
+    )
+  );
+});
+
+
+export { registerUser, login, updatePassword, getusers, getCurrentUser };
