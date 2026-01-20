@@ -152,5 +152,21 @@ const getCurrentUser = AsyncHandler(async (req, res) => {
   );
 });
 
+const logout = AsyncHandler(async (req, res) => {
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none" as const,
+    expires: new Date(0),
+  };
 
-export { registerUser, login, updatePassword, getusers, getCurrentUser };
+  return res
+    .status(200)
+    .cookie("accessToken", "", options)
+    .cookie("refreshToken", "", options)
+    .json(new ApiResponse(200, {}, "Logged out successfully"));
+});
+
+
+
+export { registerUser, login, updatePassword, getusers, getCurrentUser, logout };

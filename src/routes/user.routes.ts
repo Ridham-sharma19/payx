@@ -8,7 +8,8 @@ import {
   login,
   registerUser,
   updatePassword,getusers,
-  getCurrentUser
+  getCurrentUser,
+  logout
 } from "../controllers/user.controller.js";
 import { validate } from "../middleware/validation.middleware.js";
 import { verifyJwt } from "../middleware/auth.middleware.js";
@@ -27,6 +28,7 @@ router
   );
 router.route("/getuser").get(verifyJwt, validate, getusers);
 router.route("/me").get(verifyJwt, getCurrentUser);
+router.route("/logout").post(logout);
 
 
 export default router;
