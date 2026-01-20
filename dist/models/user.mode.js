@@ -1,9 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-/* --------------------------------------------
-   🧱 User Schema
--------------------------------------------- */
 const userSchema = new Schema({
     username: {
         type: String,
@@ -33,18 +30,12 @@ const userSchema = new Schema({
         type: String,
     },
 }, { timestamps: true });
-/* --------------------------------------------
-   🔒 Password Hash Middleware
--------------------------------------------- */
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password"))
         return next();
     this.password = await bcrypt.hash(this.password, 10);
     next();
 });
-/* --------------------------------------------
-   ⚙️ Instance Methods
--------------------------------------------- */
 userSchema.methods.isPasswordCorrect = async function (password) {
     return bcrypt.compare(password, this.password);
 };
@@ -70,9 +61,6 @@ userSchema.methods.generateRefreshToken = function () {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "7d",
     });
 };
-/* --------------------------------------------
-   🏦 Account Schema
--------------------------------------------- */
 const accountSchema = new Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -84,9 +72,6 @@ const accountSchema = new Schema({
         default: 0,
     },
 }, { timestamps: true });
-/* --------------------------------------------
-   📦 Model Exports
--------------------------------------------- */
 export const User = mongoose.model("User", userSchema);
 export const Account = mongoose.model("Account", accountSchema);
 //# sourceMappingURL=user.mode.js.map

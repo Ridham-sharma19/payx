@@ -6,7 +6,7 @@ import accountrouter from "./routes/account.routes.js";
 import cors from "cors";
 const app = express();
 app.use(cors({
-    origin: process.env.CORS_ORIGIN?.split(",") || "http://localhost:5173",
+    origin: "*",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Authorization", "Content-type"]
