@@ -113,15 +113,32 @@ const updatePassword = AsyncHandler(async (req, res) => {
 });
 
 
+import { FilterQuery } from "mongoose";
 
 const getusers = AsyncHandler(async (req, res) => {
   const filter = (req.query.filter as string)?.trim() || "";
+  
+  
+  const loggedInUserId = req.user?._id?.toString(); 
 
-  let query = {};
+  
+  let query: FilterQuery<typeof User> = {
+    _id: { $ne: loggedInUserId }
+  };
+
+  
   if (filter) {
     const regex = new RegExp("^" + filter, "i");
     query = {
-      $or: [{ username: { $regex: regex } }, { fullname: { $regex: regex } }],
+      $and: [
+        { _id: { $ne: loggedInUserId } },
+        {
+          $or: [
+            { username: { $regex: regex } }, 
+            { fullname: { $regex: regex } }
+          ],
+        }
+      ]
     };
   }
 

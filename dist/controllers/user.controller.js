@@ -69,11 +69,22 @@ const updatePassword = AsyncHandler(async (req, res) => {
 });
 const getusers = AsyncHandler(async (req, res) => {
     const filter = req.query.filter?.trim() || "";
-    let query = {};
+    const loggedInUserId = req.user?._id?.toString();
+    let query = {
+        _id: { $ne: loggedInUserId }
+    };
     if (filter) {
         const regex = new RegExp("^" + filter, "i");
         query = {
-            $or: [{ username: { $regex: regex } }, { fullname: { $regex: regex } }],
+            $and: [
+                { _id: { $ne: loggedInUserId } },
+                {
+                    $or: [
+                        { username: { $regex: regex } },
+                        { fullname: { $regex: regex } }
+                    ],
+                }
+            ]
         };
     }
     const users = await User.find(query);
@@ -87,5 +98,24 @@ const getusers = AsyncHandler(async (req, res) => {
         })),
     });
 });
-export { registerUser, login, updatePassword, getusers };
+const getCurrentUser = AsyncHandler(async (req, res) => {
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+    return res.status(200).json(new ApiResponse(200, { user: req.user }, "Current user fetched successfully"));
+});
+const logout = AsyncHandler(async (req, res) => {
+    const options = {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        expires: new Date(0),
+    };
+    return res
+        .status(200)
+        .cookie("accessToken", "", options)
+        .cookie("refreshToken", "", options)
+        .json(new ApiResponse(200, {}, "Logged out successfully"));
+});
+export { registerUser, login, updatePassword, getusers, getCurrentUser, logout };
 //# sourceMappingURL=user.controller.js.map
